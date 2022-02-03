@@ -24,11 +24,14 @@ export function SampleGroup(props: SampleGroupProps) {
     noClick: !!samples?.length,
   });
 
+  const duration = new Date(
+    samples?.reduce((total, sample) => total + sample.duration * 1000, 0) || 0
+  );
   return (
     <div {...getRootProps()}>
       <Card>
+        <Card.Header>{id}</Card.Header>
         <Card.Body>
-          <Card.Title>{id}</Card.Title>
           <input {...getInputProps()} />
           {isDragActive ? (
             <p>Drop samples here...</p>
@@ -69,6 +72,11 @@ export function SampleGroup(props: SampleGroupProps) {
             <p>Drag samples here, or click to select.</p>
           )}
         </Card.Body>
+        {duration.getMilliseconds() > 0 && (
+          <Card.Footer>
+            {`${duration.getSeconds()}.${duration.getMilliseconds()}s`}
+          </Card.Footer>
+        )}
       </Card>
     </div>
   );

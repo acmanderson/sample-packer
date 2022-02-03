@@ -2,6 +2,8 @@ import { Button, ButtonGroup, Card } from "react-bootstrap";
 
 export interface SampleProps {
   name: string;
+  duration: number;
+
   onPlay: () => void;
   onDelete: () => void;
   onShiftLeft: () => void;

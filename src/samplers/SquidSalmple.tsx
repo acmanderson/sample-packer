@@ -85,6 +85,7 @@ export function SquidSalmple(props: SamplerProps) {
             samples={sampleGroup?.map((sample, j) => {
               return {
                 name: sample.name,
+                duration: sample.buffer.duration,
                 onPlay: () => {
                   audioContext.playBuffer(sample.buffer);
                 },
