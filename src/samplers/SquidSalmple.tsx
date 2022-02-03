@@ -23,6 +23,18 @@ export function SquidSalmple(props: SamplerProps) {
   const [bankNum, setBankNum] = useState(0);
   const [packName, setPackName] = useState("Sample Pack");
 
+  const onReorder = (i: number, a: number, b: number) => {
+    if (b < 0 || b > sampleGroups.length - 1) {
+      return;
+    }
+
+    [sampleGroups[i][a], sampleGroups[i][b]] = [
+      sampleGroups[i][b],
+      sampleGroups[i][a],
+    ];
+    setSampleGroups([...sampleGroups]);
+  };
+
   const { audioContext } = props;
   return (
     <>
@@ -69,6 +81,7 @@ export function SquidSalmple(props: SamplerProps) {
               );
               setSampleGroups([...sampleGroups]);
             }}
+            onReorder={(a, b) => onReorder(i, a, b)}
             samples={sampleGroup?.map((sample, j) => {
               return {
                 name: sample.name,
@@ -79,20 +92,11 @@ export function SquidSalmple(props: SamplerProps) {
                   sampleGroups[i].splice(j, 1);
                   setSampleGroups([...sampleGroups]);
                 },
-                onShift: (direction) => {
-                  if (
-                    (direction === "left" && j === 0) ||
-                    (direction === "right" && j === sampleGroups[i].length - 1)
-                  ) {
-                    return;
-                  }
-
-                  const shift = direction === "left" ? -1 : 1;
-                  [sampleGroups[i][j + shift], sampleGroups[i][j]] = [
-                    sampleGroups[i][j],
-                    sampleGroups[i][j + shift],
-                  ];
-                  setSampleGroups([...sampleGroups]);
+                onShiftLeft: () => {
+                  onReorder(i, j, j - 1);
+                },
+                onShiftRight: () => {
+                  onReorder(i, j, j + 1);
                 },
               };
             })}

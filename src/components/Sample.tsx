@@ -4,20 +4,21 @@ export interface SampleProps {
   name: string;
   onPlay: () => void;
   onDelete: () => void;
-  onShift: (direction: "left" | "right") => void;
+  onShiftLeft: () => void;
+  onShiftRight: () => void;
 }
 
 export function Sample(props: SampleProps) {
-  const { name, onPlay, onDelete, onShift } = props;
+  const { name, onPlay, onDelete, onShiftLeft, onShiftRight } = props;
   return (
     <Card>
       <Card.Body>
         <Card.Title>{name}</Card.Title>
         <ButtonGroup size="sm">
-          <Button onClick={() => onShift("left")}>
+          <Button onClick={() => onShiftLeft()}>
             <i className={"bi-arrow-left"} />{" "}
           </Button>
-          <Button onClick={() => onShift("right")}>
+          <Button onClick={() => onShiftRight()}>
             <i className={"bi-arrow-right"} />{" "}
           </Button>
           <Button onClick={onPlay}>
