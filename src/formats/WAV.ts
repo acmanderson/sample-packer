@@ -79,25 +79,29 @@ class CueChunk extends Chunk {
 }
 
 export class WAV extends IFF {
-  toBlob(): Blob {
-    const chunks = new Array<Chunk>();
-    chunks.push(
-      new FormatChunk({ numChannels: 1, sampleRate: 44100, bitDepth: 16 })
-    );
-    const dataChunk = new DataChunk({ buffers: this.buffers, bitDepth: 16 });
-    chunks.push(dataChunk);
-    if (this.buffers.length > 0) {
-      chunks.push(new CueChunk(dataChunk.sampleOffsets));
-    }
-    chunks.unshift(
-      new RIFFChunk(
-        chunks.reduce((length, chunk) => length + chunk.data.byteLength, 0)
-      )
-    );
+  toBlob(): Promise<Blob> {
+    return new Promise<Blob>((resolve) => {
+      const chunks = new Array<Chunk>();
+      chunks.push(
+        new FormatChunk({ numChannels: 1, sampleRate: 44100, bitDepth: 16 })
+      );
+      const dataChunk = new DataChunk({ buffers: this.buffers, bitDepth: 16 });
+      chunks.push(dataChunk);
+      if (this.buffers.length > 0) {
+        chunks.push(new CueChunk(dataChunk.sampleOffsets));
+      }
+      chunks.unshift(
+        new RIFFChunk(
+          chunks.reduce((length, chunk) => length + chunk.data.byteLength, 0)
+        )
+      );
 
-    return new Blob(
-      chunks.map((chunk) => chunk.data),
-      { type: "audio/wav" }
-    );
+      return resolve(
+        new Blob(
+          chunks.map((chunk) => chunk.data),
+          { type: "audio/wav" }
+        )
+      );
+    });
   }
 }

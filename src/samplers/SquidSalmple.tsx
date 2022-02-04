@@ -4,36 +4,19 @@ import JSZip from "jszip";
 import { WAV } from "../formats/WAV";
 import { saveAs } from "file-saver";
 import { SampleGroup } from "../components/SampleGroup";
-import SampleAudioContext from "../util/SampleAudioContext";
+import { AudioSample, AudioSampleGroup } from "../util/AudioSample";
 
 export interface SamplerProps {
-  audioContext: SampleAudioContext;
-}
-
-interface SampleState {
-  name: string;
-  buffer: AudioBuffer;
+  audioContext: AudioContext;
 }
 
 export function SquidSalmple(props: SamplerProps) {
-  const [sampleGroups, setSampleGroups] = useState<SampleState[][]>(
-    // implicitly fill array to let us use map() below, since map() doesn't work on an array with unassigned values
-    [...new Array<SampleState[]>(8)]
+  const [sampleGroups, setSampleGroups] = useState<AudioSampleGroup[]>(
+    Array.from({ length: 8 }, () => new AudioSampleGroup())
   );
   const [bankNum, setBankNum] = useState(0);
   const [packName, setPackName] = useState("Sample Pack");
-
-  const onReorder = (i: number, a: number, b: number) => {
-    if (b < 0 || b > sampleGroups.length - 1) {
-      return;
-    }
-
-    [sampleGroups[i][a], sampleGroups[i][b]] = [
-      sampleGroups[i][b],
-      sampleGroups[i][a],
-    ];
-    setSampleGroups([...sampleGroups]);
-  };
+  const [saving, setSaving] = useState(false);
 
   const { audioContext } = props;
   return (
@@ -63,66 +46,73 @@ export function SquidSalmple(props: SamplerProps) {
         {sampleGroups.map((sampleGroup, i) => (
           <SampleGroup
             key={i}
-            id={i + 1}
+            name={`Channel ${i + 1}`}
             onDrop={async (files: File[]) => {
-              sampleGroups[i] = (
-                sampleGroup || new Array<SampleState>()
-              ).concat(
-                await Promise.all(
-                  files.map((file) =>
-                    audioContext.decodeFile(file).then(
-                      (decodedBuffer): SampleState => ({
-                        name: file.name,
-                        buffer: decodedBuffer,
-                      })
-                    )
-                  )
-                )
-              );
+              Promise.all(
+                files.map((file) => {
+                  const sample = new AudioSample(audioContext);
+                  return sample.decodeFile(file).then(() => sample);
+                })
+              ).then((samples) => {
+                sampleGroup.add(...samples);
+                setSampleGroups([...sampleGroups]);
+              });
+            }}
+            onReorder={(a, b) => {
+              sampleGroup.swap(a, b);
               setSampleGroups([...sampleGroups]);
             }}
-            onReorder={(a, b) => onReorder(i, a, b)}
-            samples={sampleGroup?.map((sample, j) => {
+            samples={sampleGroup?.samples.map((sample, i) => {
               return {
-                name: sample.name,
-                duration: sample.buffer.duration,
-                onPlay: () => {
-                  audioContext.playBuffer(sample.buffer);
-                },
+                sample: sample,
                 onDelete: () => {
-                  sampleGroups[i].splice(j, 1);
+                  sampleGroup.remove(i);
                   setSampleGroups([...sampleGroups]);
                 },
                 onShiftLeft: () => {
-                  onReorder(i, j, j - 1);
+                  sampleGroup.swap(i, i - 1);
+                  setSampleGroups([...sampleGroups]);
                 },
                 onShiftRight: () => {
-                  onReorder(i, j, j + 1);
+                  sampleGroup.swap(i, i + 1);
+                  setSampleGroups([...sampleGroups]);
                 },
               };
             })}
           />
         ))}
         <Button
+          disabled={saving}
           onClick={() => {
+            setSaving(true);
+
             const zip = new JSZip();
             const bankName = `Bank ${bankNum || "XX"}`;
             const pack = zip.folder(bankName);
-
             pack?.file("info.txt", packName);
-            sampleGroups.forEach((sample, i) => {
-              if (sample) {
-                const wav = new WAV(sample.map((s) => s.buffer));
-                pack?.file(`chan-00${i + 1}.wav`, wav.toBlob());
-              }
-            });
 
-            zip.generateAsync({ type: "blob" }).then((content) => {
-              saveAs(content, bankName);
+            Promise.all(
+              sampleGroups.map((sampleGroup, i) => {
+                const buffers = sampleGroup.buffers();
+                if (buffers.length > 0) {
+                  const wav = new WAV(buffers);
+                  return wav.toBlob().then((blob) => {
+                    pack?.file(`chan-00${i + 1}.wav`, blob);
+                  });
+                }
+                return new Promise<void>((resolve) => {
+                  resolve();
+                });
+              })
+            ).then(() => {
+              zip.generateAsync({ type: "blob" }).then((content) => {
+                saveAs(content, bankName);
+                setSaving(false);
+              });
             });
           }}
         >
-          Save
+          {saving ? "Saving..." : "Save"}
         </Button>
       </Stack>
     </>

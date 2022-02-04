@@ -6,12 +6,11 @@ import {
   NavDropdown,
 } from "react-bootstrap";
 import { SquidSalmple } from "./samplers/SquidSalmple";
-import SampleAudioContext from "./util/SampleAudioContext";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import DropdownItem from "react-bootstrap/DropdownItem";
 
 function App() {
-  const [audioContext] = useState(new SampleAudioContext(new AudioContext()));
+  const [audioContext] = useState(new AudioContext());
   const samplers = useMemo<
     {
       name: string;

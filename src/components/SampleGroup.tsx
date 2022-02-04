@@ -5,14 +5,14 @@ import { Card, Stack } from "react-bootstrap";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 export interface SampleGroupProps {
-  id?: number | string;
+  name?: string;
   onDrop: (files: File[]) => Promise<void>;
   onReorder: (a: number, b: number) => void;
   samples?: SampleProps[];
 }
 
 export function SampleGroup(props: SampleGroupProps) {
-  const { id, samples, onDrop, onReorder } = props;
+  const { name, samples, onDrop, onReorder } = props;
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: useCallback(
       async (acceptedFiles: File[]) => {
@@ -25,12 +25,15 @@ export function SampleGroup(props: SampleGroupProps) {
   });
 
   const duration = new Date(
-    samples?.reduce((total, sample) => total + sample.duration * 1000, 0) || 0
+    samples?.reduce(
+      (total, sample) => total + sample.sample.duration * 1000,
+      0
+    ) || 0
   );
   return (
     <div {...getRootProps()}>
       <Card>
-        <Card.Header>{id}</Card.Header>
+        <Card.Header>{name}</Card.Header>
         <Card.Body>
           <input {...getInputProps()} />
           {isDragActive ? (
@@ -47,7 +50,11 @@ export function SampleGroup(props: SampleGroupProps) {
               <Droppable droppableId={"droppable"} direction={"horizontal"}>
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps}>
-                    <Stack direction={"horizontal"} gap={3}>
+                    <Stack
+                      direction={"horizontal"}
+                      gap={3}
+                      style={{ overflowX: "auto" }}
+                    >
                       {samples.map((sample, i) => (
                         <Draggable key={i} draggableId={i.toString()} index={i}>
                           {(provided) => (
@@ -72,9 +79,12 @@ export function SampleGroup(props: SampleGroupProps) {
             <p>Drag samples here, or click to select.</p>
           )}
         </Card.Body>
+        {/* TODO: more robust duration calculation */}
         {duration.getMilliseconds() > 0 && (
           <Card.Footer>
-            {`${duration.getSeconds()}.${duration.getMilliseconds()}s`}
+            {`${
+              duration.getMinutes() * 60 + duration.getSeconds()
+            }.${duration.getMilliseconds()}s`}
           </Card.Footer>
         )}
       </Card>

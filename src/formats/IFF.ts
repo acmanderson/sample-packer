@@ -46,7 +46,7 @@ export class IFF {
     this.buffers = buffers;
   }
 
-  toBlob(): Blob {
-    return new Blob();
+  toBlob(): Promise<Blob> {
+    return new Promise((resolve) => resolve(new Blob()));
   }
 }

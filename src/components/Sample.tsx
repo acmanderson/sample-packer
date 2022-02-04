@@ -1,21 +1,19 @@
 import { Button, ButtonGroup, Card } from "react-bootstrap";
+import { AudioSample } from "../util/AudioSample";
 
 export interface SampleProps {
-  name: string;
-  duration: number;
-
-  onPlay: () => void;
+  sample: AudioSample;
   onDelete: () => void;
   onShiftLeft: () => void;
   onShiftRight: () => void;
 }
 
 export function Sample(props: SampleProps) {
-  const { name, onPlay, onDelete, onShiftLeft, onShiftRight } = props;
+  const { sample, onDelete, onShiftLeft, onShiftRight } = props;
   return (
     <Card>
       <Card.Body>
-        <Card.Title>{name}</Card.Title>
+        <Card.Title>{sample.name}</Card.Title>
         <ButtonGroup size="sm">
           <Button onClick={() => onShiftLeft()}>
             <i className={"bi-arrow-left"} />{" "}
@@ -23,7 +21,7 @@ export function Sample(props: SampleProps) {
           <Button onClick={() => onShiftRight()}>
             <i className={"bi-arrow-right"} />{" "}
           </Button>
-          <Button onClick={onPlay}>
+          <Button onClick={() => sample.play()}>
             <i className={"bi-play-fill"} />{" "}
           </Button>
           <Button onClick={onDelete}>
