@@ -1,4 +1,5 @@
 import { Chunk, IFF } from "./IFF";
+import { AudioSampleBuffer } from "../util/AudioSample";
 
 class RIFFChunk extends Chunk {
   constructor(length: number) {
@@ -21,8 +22,10 @@ class FormatChunk extends Chunk {
     this.setUint16(1); // compression code
     this.setUint16(options.numChannels);
     this.setUint32(options.sampleRate);
-    this.setUint32(options.numChannels * options.sampleRate * 2); // avg bps
-    this.setUint16(options.numChannels * 2); // block align
+    this.setUint32(
+      options.numChannels * options.sampleRate * (options.bitDepth / 8)
+    ); // avg bps
+    this.setUint16(options.numChannels * (options.bitDepth / 8)); // block align
     this.setUint16(options.bitDepth);
   }
 }
@@ -30,12 +33,12 @@ class FormatChunk extends Chunk {
 class DataChunk extends Chunk {
   sampleOffsets: number[];
 
-  constructor(options: { buffers: AudioBuffer[]; bitDepth: 16 }) {
+  constructor(options: { buffers: AudioSampleBuffer[]; bitDepth: 16 }) {
     // TODO: support multiple channels, bit depths
     super(
       "data",
       options.buffers.reduce((length, buffer) => {
-        return length + buffer.getChannelData(0).length * 2;
+        return length + buffer.length * (options.bitDepth / 8);
       }, 0),
       true
     );
@@ -45,13 +48,9 @@ class DataChunk extends Chunk {
       // Calculate sample offsets for use in cue chunk. Numbers are sample offsets, not byte offsets.
       this.sampleOffsets.push((this.offset - 8) / (options.bitDepth / 8));
 
-      const channelData = buffer.getChannelData(0);
-      const sampleMax = 2 ** options.bitDepth / 2;
-      for (let i = 0; i < channelData.length; i++) {
-        // convert float32 sample to integer of provided bit depth
-        const clamped = Math.max(-1, Math.min(1, channelData[i]));
-        const sample =
-          0.5 + clamped < 0 ? clamped * sampleMax : clamped * (sampleMax - 1);
+      buffer.convertToMono();
+      for (let i = 0; i < buffer.length; i++) {
+        const sample = buffer.sampleAtIndex(0, i, options.bitDepth);
         switch (options.bitDepth) {
           case 16:
             this.setInt16(sample);

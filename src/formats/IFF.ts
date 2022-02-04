@@ -1,3 +1,5 @@
+import { AudioSampleBuffer } from "../util/AudioSample";
+
 export class Chunk {
   data: DataView;
   littleEndian: boolean;
@@ -40,9 +42,9 @@ export class Chunk {
 }
 
 export class IFF {
-  buffers: AudioBuffer[];
+  buffers: AudioSampleBuffer[];
 
-  constructor(buffers: AudioBuffer[]) {
+  constructor(buffers: AudioSampleBuffer[]) {
     this.buffers = buffers;
   }
 
