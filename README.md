@@ -1,6 +1,6 @@
 # sample-packer
 
-sample-packer is a tool to aid in creating sample packs for various hardware samplers.
+sample-packer is a tool to aid in creating sample packs for various audio samplers.
 
 ## Supported Samplers/Features
 * ALM Busy Circuits Squid Salmple

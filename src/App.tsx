@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Container,
   DropdownButton,
@@ -6,8 +6,9 @@ import {
   NavDropdown,
 } from "react-bootstrap";
 import { SquidSalmple } from "./samplers/SquidSalmple";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import DropdownItem from "react-bootstrap/DropdownItem";
+import { OP1Z } from "./samplers/OP-1Z";
 
 function App() {
   const [audioContext] = useState(new AudioContext());
@@ -24,6 +25,11 @@ function App() {
         path: "squid-salmple",
         // TODO: use context instead of props for AudioContext?
         element: <SquidSalmple audioContext={audioContext} />,
+      },
+      {
+        name: "OP-1/OP-Z",
+        path: "op-1z",
+        element: <OP1Z audioContext={audioContext} />,
       },
     ];
   }, [audioContext]);
