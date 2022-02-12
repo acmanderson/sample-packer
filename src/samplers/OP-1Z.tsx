@@ -1,18 +1,32 @@
-import { SamplerProps } from "./SquidSalmple";
 import React, { useState } from "react";
-import {
-  AudioSample,
-  AudioSampleBuffer,
-  AudioSampleGroup,
-} from "../util/AudioSample";
+import { SamplerProps } from "./SquidSalmple";
+import { AudioSample, AudioSampleGroup } from "../util/AudioSample";
 import { Button, FormControl, InputGroup, Stack } from "react-bootstrap";
-import { SampleGroup } from "../components/SampleGroup";
 import { AIFF, ApplicationData } from "../formats/AIFF";
 import { saveAs } from "file-saver";
+import { Sample } from "../components/Sample";
 
-const numSamples = 24;
+const NUM_SAMPLES = 24;
+const NOTES: { name: string; theme: "light" | "dark" }[] = [
+  { name: "F", theme: "light" },
+  { name: "F#", theme: "dark" },
+  { name: "G", theme: "light" },
+  { name: "G#", theme: "dark" },
+  { name: "A", theme: "light" },
+  { name: "A#", theme: "dark" },
+  { name: "B", theme: "light" },
+  { name: "C", theme: "light" },
+  { name: "C#", theme: "dark" },
+  { name: "D", theme: "light" },
+  { name: "D#", theme: "dark" },
+  { name: "E", theme: "light" },
+];
 
-function buildMetadata(buffers: AudioSampleBuffer[]): Promise<ApplicationData> {
+function buildMetadata(
+  sampleGroup: AudioSampleGroup
+): Promise<ApplicationData> {
+  // FIXME: times are weird if first sample is not populated
+  // FIXME: clicking at sample end when imported to OP-1, need to adjust end time?
   return new Promise((resolve) => {
     const baseMetadata: any = {
       drum_version: 1,
@@ -44,16 +58,16 @@ function buildMetadata(buffers: AudioSampleBuffer[]): Promise<ApplicationData> {
     };
 
     // mark start and end times of each sample to play back per-key
-    [baseMetadata.start, baseMetadata.end] = buffers.reduce(
-      ([startTimes, endTimes], buffer, i) => {
+    [baseMetadata.start, baseMetadata.end] = sampleGroup.samples.reduce(
+      ([startTimes, endTimes], sample, i) => {
         // these values are kind of a mystery
         const timeScale = (2 ** 31 - 1) / 12;
         const timePadding = 4058;
 
         let start: number, end: number;
-        if (!!buffer) {
+        if (!!sample?.audioBuffer) {
           start = i > 0 ? endTimes[i - 1] + timePadding : 0;
-          end = Math.ceil(start + buffer.duration * timeScale);
+          end = Math.ceil(start + sample.audioBuffer.duration * timeScale);
         } else {
           start = i > 0 ? startTimes[i - 1] : 0;
           end = i > 0 ? endTimes[i - 1] : 0;
@@ -62,7 +76,7 @@ function buildMetadata(buffers: AudioSampleBuffer[]): Promise<ApplicationData> {
         [startTimes[i], endTimes[i]] = [start, end];
         return [startTimes, endTimes];
       },
-      [new Array<number>(numSamples), new Array<number>(numSamples)]
+      [new Array<number>(NUM_SAMPLES), new Array<number>(NUM_SAMPLES)]
     );
 
     const metadata = JSON.stringify(baseMetadata);
@@ -79,8 +93,10 @@ function buildMetadata(buffers: AudioSampleBuffer[]): Promise<ApplicationData> {
 }
 
 export function OP1Z(props: SamplerProps) {
-  const [sampleGroups, setSampleGroups] = useState<AudioSampleGroup[]>(
-    Array.from({ length: numSamples }, () => new AudioSampleGroup())
+  const [sampleGroup, setSampleGroup] = useState(
+    new AudioSampleGroup(
+      new Array<AudioSample | undefined>(NUM_SAMPLES).fill(undefined)
+    )
   );
   const [patchName, setPatchName] = useState("patch");
   const [saving, setSaving] = useState(false);
@@ -98,44 +114,75 @@ export function OP1Z(props: SamplerProps) {
         />
       </InputGroup>
       <Stack direction={"vertical"} gap={3}>
-        {sampleGroups.map((sampleGroup, i) => (
-          <SampleGroup
-            key={i}
-            name={`${i + 1}`}
-            onDrop={async (files: File[]) => {
-              Promise.all(
-                files.map((file) => {
-                  const sample = new AudioSample(audioContext);
-                  return sample.decodeFile(file).then(() => sample);
-                })
-              ).then((samples) => {
-                sampleGroup.add(...samples);
-                setSampleGroups([...sampleGroups]);
-              });
-            }}
-            onReorder={(a, b) => {
-              sampleGroup.swap(a, b);
-              setSampleGroups([...sampleGroups]);
-            }}
-            samples={sampleGroup?.samples.map((sample, i) => {
-              return {
-                sample: sample,
-                onDelete: () => {
-                  sampleGroup.remove(i);
-                  setSampleGroups([...sampleGroups]);
-                },
-                onShiftLeft: () => {
-                  sampleGroup.swap(i, i - 1);
-                  setSampleGroups([...sampleGroups]);
-                },
-                onShiftRight: () => {
-                  sampleGroup.swap(i, i + 1);
-                  setSampleGroups([...sampleGroups]);
-                },
-              };
-            })}
-          />
-        ))}
+        <Sample.Group>
+          <Sample.Group.Header>{`${patchName}.aif`}</Sample.Group.Header>
+          <Sample.Group.Body>
+            <Sample.Group.DragDrop
+              direction={"vertical"}
+              onDragEnd={({ source, destination }) => {
+                if (!!destination) {
+                  sampleGroup.swap(source.index, destination.index);
+                  setSampleGroup(sampleGroup.clone());
+                }
+              }}
+            >
+              {sampleGroup?.samples.map((sample, i) => {
+                const note = NOTES[i % NOTES.length];
+                return sample ? (
+                  <Sample key={i} theme={note.theme}>
+                    <Sample.Header>{`${note.name} (${sample.name})`}</Sample.Header>
+                    <Sample.Body>
+                      <Sample.Controls>
+                        <Sample.Controls.Up
+                          onClick={() => {
+                            sampleGroup.swap(i, i - 1);
+                            setSampleGroup(sampleGroup.clone());
+                          }}
+                        />
+                        <Sample.Controls.Down
+                          onClick={() => {
+                            sampleGroup.swap(i, i + 1);
+                            setSampleGroup(sampleGroup.clone());
+                          }}
+                        />
+                        <Sample.Controls.Play onClick={() => sample.play()} />
+                        <Sample.Controls.Delete
+                          onClick={() => {
+                            sampleGroup.clear(i);
+                            setSampleGroup(sampleGroup.clone());
+                          }}
+                        />
+                      </Sample.Controls>
+                    </Sample.Body>
+                  </Sample>
+                ) : (
+                  <Sample key={i} theme={note.theme}>
+                    <Sample.Header>{note.name}</Sample.Header>
+                    <Sample.Body>
+                      <Sample.Dropzone
+                        audioContext={audioContext}
+                        multiple={false}
+                        onDrop={(samples) => {
+                          sampleGroup.set(i, samples[0]);
+                          setSampleGroup(sampleGroup.clone());
+                        }}
+                      >
+                        {({ getRootProps, getInputProps, isDragActive }) => (
+                          <div {...getRootProps()}>
+                            <input {...getInputProps()} />
+                            {isDragActive
+                              ? "Drop sample here..."
+                              : "Drag sample here or click to select."}
+                          </div>
+                        )}
+                      </Sample.Dropzone>
+                    </Sample.Body>
+                  </Sample>
+                );
+              })}
+            </Sample.Group.DragDrop>
+          </Sample.Group.Body>
+        </Sample.Group>
         <Button
           disabled={
             saving /* FIXME: this doesn't rerender for some reason when calling setSaving() */
@@ -143,19 +190,12 @@ export function OP1Z(props: SamplerProps) {
           onClick={() => {
             setSaving(true);
 
-            const buffers = sampleGroups.map(
-              (sampleGroup) => sampleGroup.buffers()[0]
-            );
-
-            if (buffers.length > 0) {
-              buildMetadata(buffers)
+            if (sampleGroup.samples.some((sample) => !!sample)) {
+              buildMetadata(sampleGroup)
                 .then((metadata) =>
-                  new AIFF(
-                    buffers.filter((buffer) => !!buffer),
-                    {
-                      applicationData: metadata,
-                    }
-                  ).toBlob()
+                  new AIFF(sampleGroup.buffers(), {
+                    applicationData: metadata,
+                  }).toBlob()
                 )
                 .then((blob) => {
                   saveAs(blob, `${patchName}.aif`);

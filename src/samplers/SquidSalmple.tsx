@@ -3,8 +3,8 @@ import { Button, FormControl, InputGroup, Stack } from "react-bootstrap";
 import JSZip from "jszip";
 import { WAV } from "../formats/WAV";
 import { saveAs } from "file-saver";
-import { SampleGroup } from "../components/SampleGroup";
-import { AudioSample, AudioSampleGroup } from "../util/AudioSample";
+import { AudioSampleGroup } from "../util/AudioSample";
+import { Sample } from "../components/Sample";
 
 export interface SamplerProps {
   audioContext: AudioContext;
@@ -44,42 +44,72 @@ export function SquidSalmple(props: SamplerProps) {
       </InputGroup>
       <Stack direction={"vertical"} gap={3}>
         {sampleGroups.map((sampleGroup, i) => (
-          <SampleGroup
-            key={i}
-            name={`Channel ${i + 1}`}
-            onDrop={async (files: File[]) => {
-              Promise.all(
-                files.map((file) => {
-                  const sample = new AudioSample(audioContext);
-                  return sample.decodeFile(file).then(() => sample);
-                })
-              ).then((samples) => {
-                sampleGroup.add(...samples);
-                setSampleGroups([...sampleGroups]);
-              });
-            }}
-            onReorder={(a, b) => {
-              sampleGroup.swap(a, b);
-              setSampleGroups([...sampleGroups]);
-            }}
-            samples={sampleGroup?.samples.map((sample, i) => {
-              return {
-                sample: sample,
-                onDelete: () => {
-                  sampleGroup.remove(i);
+          <Sample.Group key={i}>
+            <Sample.Group.Header>{`Channel ${i + 1}`}</Sample.Group.Header>
+            <Sample.Group.Body>
+              <Sample.Dropzone
+                audioContext={audioContext}
+                multiple={true}
+                onDrop={(samples) => {
+                  sampleGroup.add(...samples);
                   setSampleGroups([...sampleGroups]);
-                },
-                onShiftLeft: () => {
-                  sampleGroup.swap(i, i - 1);
-                  setSampleGroups([...sampleGroups]);
-                },
-                onShiftRight: () => {
-                  sampleGroup.swap(i, i + 1);
-                  setSampleGroups([...sampleGroups]);
-                },
-              };
-            })}
-          />
+                }}
+              >
+                {({ getRootProps, getInputProps, isDragActive }) => (
+                  <div {...getRootProps()}>
+                    <input {...getInputProps()} />
+                    {sampleGroup.samples.length === 0 ? (
+                      isDragActive ? (
+                        "Drop samples here..."
+                      ) : (
+                        "Drag samples here or click to select."
+                      )
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+                )}
+              </Sample.Dropzone>
+              <Sample.Group.DragDrop
+                direction={"horizontal"}
+                onDragEnd={({ source, destination }) => {
+                  if (!!destination) {
+                    sampleGroup.swap(source.index, destination.index);
+                    setSampleGroups([...sampleGroups]);
+                  }
+                }}
+              >
+                {sampleGroup?.samples.map((sample, i) => (
+                  <Sample key={i}>
+                    <Sample.Header>{sample?.name}</Sample.Header>
+                    <Sample.Body>
+                      <Sample.Controls>
+                        <Sample.Controls.Left
+                          onClick={() => {
+                            sampleGroup.swap(i, i - 1);
+                            setSampleGroups([...sampleGroups]);
+                          }}
+                        />
+                        <Sample.Controls.Right
+                          onClick={() => {
+                            sampleGroup.swap(i, i + 1);
+                            setSampleGroups([...sampleGroups]);
+                          }}
+                        />
+                        <Sample.Controls.Play onClick={() => sample?.play()} />
+                        <Sample.Controls.Delete
+                          onClick={() => {
+                            sampleGroup.remove(i);
+                            setSampleGroups([...sampleGroups]);
+                          }}
+                        />
+                      </Sample.Controls>
+                    </Sample.Body>
+                  </Sample>
+                ))}
+              </Sample.Group.DragDrop>
+            </Sample.Group.Body>
+          </Sample.Group>
         ))}
         <Button
           disabled={saving}

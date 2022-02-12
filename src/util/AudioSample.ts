@@ -30,10 +30,14 @@ export class AudioSample {
 }
 
 export class AudioSampleGroup {
-  samples: AudioSample[];
+  samples: (AudioSample | undefined)[];
 
-  constructor() {
-    this.samples = [];
+  constructor(samples?: (AudioSample | undefined)[]) {
+    this.samples = samples ?? [];
+  }
+
+  clone(): AudioSampleGroup {
+    return new AudioSampleGroup(this.samples);
   }
 
   swap(a: number, b: number) {
@@ -46,6 +50,7 @@ export class AudioSampleGroup {
       return;
     }
 
+    // TODO: shift order instead of swapping to match UX
     [this.samples[a], this.samples[b]] = [this.samples[b], this.samples[a]];
   }
 
@@ -57,10 +62,18 @@ export class AudioSampleGroup {
     this.samples.splice(i, 1);
   }
 
+  set(i: number, sample: AudioSample) {
+    this.samples[i] = sample;
+  }
+
+  clear(i: number) {
+    this.samples[i] = undefined;
+  }
+
   buffers(): AudioSampleBuffer[] {
     return this.samples
-      .filter((sample) => !!sample.audioBuffer)
-      .map((sample) => sample.audioBuffer!);
+      .filter((sample) => !!sample?.audioBuffer)
+      .map((sample) => sample!.audioBuffer!);
   }
 }
 
