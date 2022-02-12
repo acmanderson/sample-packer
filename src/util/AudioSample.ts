@@ -40,18 +40,17 @@ export class AudioSampleGroup {
     return new AudioSampleGroup(this.samples);
   }
 
-  swap(a: number, b: number) {
+  move(from: number, to: number) {
     if (
-      a < 0 ||
-      a > this.samples.length - 1 ||
-      b < 0 ||
-      b > this.samples.length - 1
+      from < 0 ||
+      from > this.samples.length - 1 ||
+      to < 0 ||
+      to > this.samples.length - 1
     ) {
       return;
     }
 
-    // TODO: shift order instead of swapping to match UX
-    [this.samples[a], this.samples[b]] = [this.samples[b], this.samples[a]];
+    this.samples.splice(to, 0, this.samples.splice(from, 1)[0]);
   }
 
   add(...samples: AudioSample[]) {

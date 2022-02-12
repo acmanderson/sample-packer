@@ -121,7 +121,7 @@ export function OP1Z(props: SamplerProps) {
               direction={"vertical"}
               onDragEnd={({ source, destination }) => {
                 if (!!destination) {
-                  sampleGroup.swap(source.index, destination.index);
+                  sampleGroup.move(source.index, destination.index);
                   setSampleGroup(sampleGroup.clone());
                 }
               }}
@@ -135,13 +135,13 @@ export function OP1Z(props: SamplerProps) {
                       <Sample.Controls>
                         <Sample.Controls.Up
                           onClick={() => {
-                            sampleGroup.swap(i, i - 1);
+                            sampleGroup.move(i, i - 1);
                             setSampleGroup(sampleGroup.clone());
                           }}
                         />
                         <Sample.Controls.Down
                           onClick={() => {
-                            sampleGroup.swap(i, i + 1);
+                            sampleGroup.move(i, i + 1);
                             setSampleGroup(sampleGroup.clone());
                           }}
                         />

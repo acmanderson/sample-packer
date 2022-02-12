@@ -74,7 +74,7 @@ export function SquidSalmple(props: SamplerProps) {
                 direction={"horizontal"}
                 onDragEnd={({ source, destination }) => {
                   if (!!destination) {
-                    sampleGroup.swap(source.index, destination.index);
+                    sampleGroup.move(source.index, destination.index);
                     setSampleGroups([...sampleGroups]);
                   }
                 }}
@@ -86,13 +86,13 @@ export function SquidSalmple(props: SamplerProps) {
                       <Sample.Controls>
                         <Sample.Controls.Left
                           onClick={() => {
-                            sampleGroup.swap(i, i - 1);
+                            sampleGroup.move(i, i - 1);
                             setSampleGroups([...sampleGroups]);
                           }}
                         />
                         <Sample.Controls.Right
                           onClick={() => {
-                            sampleGroup.swap(i, i + 1);
+                            sampleGroup.move(i, i + 1);
                             setSampleGroups([...sampleGroups]);
                           }}
                         />
