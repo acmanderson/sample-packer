@@ -60,14 +60,20 @@ function buildMetadata(
     // mark start and end times of each sample to play back per-key
     [baseMetadata.start, baseMetadata.end] = sampleGroup.samples.reduce(
       ([startTimes, endTimes], sample, i) => {
-        // these values are kind of a mystery
+        // the origin of these values is kind of a mystery
+        // max int32 / max number of seconds in an OP-1 sample file
         const timeScale = (2 ** 31 - 1) / 12;
+        // timeScale / 44100 (OP-1 sample rate)
         const timePadding = 4058;
 
         let start: number, end: number;
         if (!!sample?.audioBuffer) {
+          // time padding logic inferred from looking at OP-1 Drum Utility hex dumps
+          // add time padding at the start of every sample after the first
           start = i > 0 ? endTimes[i - 1] + timePadding : 0;
-          end = Math.ceil(start + sample.audioBuffer.duration * timeScale);
+          // subtract twice the time padding from the end of a sample marker to prevent clicks at the end of a sample
+          end =
+            Math.ceil(start + sample.duration * timeScale) - timePadding * 2;
         } else {
           start = i > 0 ? startTimes[i - 1] : 0;
           end = i > 0 ? endTimes[i - 1] : 0;
