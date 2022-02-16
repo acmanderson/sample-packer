@@ -36,6 +36,13 @@ export class AudioSampleGroup {
     this.samples = samples ?? [];
   }
 
+  get duration(): number {
+    return this.samples.reduce(
+      (total, sample) => total + (sample?.duration ?? 0),
+      0
+    );
+  }
+
   clone(): AudioSampleGroup {
     return new AudioSampleGroup(this.samples);
   }

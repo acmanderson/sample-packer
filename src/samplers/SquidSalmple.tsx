@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Button, FormControl, InputGroup, Stack } from "react-bootstrap";
+import { Alert, Button, FormControl, InputGroup, Stack } from "react-bootstrap";
 import JSZip from "jszip";
 import { WAV } from "../formats/WAV";
 import { saveAs } from "file-saver";
 import { AudioSampleGroup } from "../util/AudioSample";
 import { Sample } from "../components/Sample";
+
+const MAX_CHANNEL_DURATION_SECONDS = 11;
 
 export interface SamplerProps {
   audioContext: AudioContext;
@@ -44,9 +46,22 @@ export function SquidSalmple(props: SamplerProps) {
       </InputGroup>
       <Stack direction={"vertical"} gap={3}>
         {sampleGroups.map((sampleGroup, i) => (
-          <Sample.Group key={i}>
+          <Sample.Group
+            key={i}
+            border={
+              sampleGroup.duration > MAX_CHANNEL_DURATION_SECONDS
+                ? "warning"
+                : ""
+            }
+          >
             <Sample.Group.Header>{`Channel ${i + 1}`}</Sample.Group.Header>
             <Sample.Group.Body>
+              {sampleGroup.duration > MAX_CHANNEL_DURATION_SECONDS && (
+                <Alert variant={"warning"}>
+                  Max channel duration ({MAX_CHANNEL_DURATION_SECONDS}s)
+                  exceeded. Samples may be truncated when imported.
+                </Alert>
+              )}
               <Sample.Dropzone
                 audioContext={audioContext}
                 multiple={true}
@@ -105,10 +120,16 @@ export function SquidSalmple(props: SamplerProps) {
                         />
                       </Sample.Controls>
                     </Sample.Body>
+                    <Sample.Footer>
+                      <Sample.Duration duration={sample?.duration ?? 0} />
+                    </Sample.Footer>
                   </Sample>
                 ))}
               </Sample.Group.DragDrop>
             </Sample.Group.Body>
+            <Sample.Group.Footer>
+              <Sample.Duration duration={sampleGroup.duration} />
+            </Sample.Group.Footer>
           </Sample.Group>
         ))}
         <Button

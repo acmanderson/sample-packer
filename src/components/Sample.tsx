@@ -17,6 +17,7 @@ export const Sample = ({
 
 Sample.Header = Card.Header;
 Sample.Body = Card.Body;
+Sample.Footer = Card.Footer;
 Sample.Dropzone = SampleDropzone;
 Sample.Group = SampleGroup;
 
@@ -39,5 +40,10 @@ SampleControls.Up = SampleControl("bi-arrow-up");
 SampleControls.Down = SampleControl("bi-arrow-down");
 SampleControls.Left = SampleControl("bi-arrow-left");
 SampleControls.Right = SampleControl("bi-arrow-right");
-
 Sample.Controls = SampleControls;
+
+export const SampleDuration = ({ duration }: { duration: number }) => (
+  <>{duration.toLocaleString(undefined, { maximumFractionDigits: 2 })}s</>
+);
+
+Sample.Duration = SampleDuration;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Stack } from "react-bootstrap";
+import { Card, CardProps, Stack } from "react-bootstrap";
 import {
   DragDropContext,
   DragDropContextProps,
@@ -43,10 +43,14 @@ export const SampleGroupDragDrop = (
   );
 };
 
-export const SampleGroup = ({ children }: { children: React.ReactNode }) => (
-  <Card>{children}</Card>
-);
+export const SampleGroup = ({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+} & CardProps) => <Card {...props}>{children}</Card>;
 
 SampleGroup.Header = Card.Header;
 SampleGroup.Body = Card.Body;
+SampleGroup.Footer = Card.Footer;
 SampleGroup.DragDrop = SampleGroupDragDrop;

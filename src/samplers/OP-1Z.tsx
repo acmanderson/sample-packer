@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { SamplerProps } from "./SquidSalmple";
 import { AudioSample, AudioSampleGroup } from "../util/AudioSample";
-import { Button, FormControl, InputGroup, Stack } from "react-bootstrap";
+import { Alert, Button, FormControl, InputGroup, Stack } from "react-bootstrap";
 import { AIFF, ApplicationData } from "../formats/AIFF";
 import { saveAs } from "file-saver";
 import { Sample } from "../components/Sample";
 
 const NUM_SAMPLES = 24;
+const MAX_DURATION_SECONDS = 12;
 const NOTES: { name: string; theme: "light" | "dark" }[] = [
   { name: "F", theme: "light" },
   { name: "F#", theme: "dark" },
@@ -26,7 +27,6 @@ function buildMetadata(
   sampleGroup: AudioSampleGroup
 ): Promise<ApplicationData> {
   // FIXME: times are weird if first sample is not populated
-  // FIXME: clicking at sample end when imported to OP-1, need to adjust end time?
   return new Promise((resolve) => {
     const baseMetadata: any = {
       drum_version: 1,
@@ -120,9 +120,17 @@ export function OP1Z(props: SamplerProps) {
         />
       </InputGroup>
       <Stack direction={"vertical"} gap={3}>
-        <Sample.Group>
+        <Sample.Group
+          border={sampleGroup.duration > MAX_DURATION_SECONDS ? "warning" : ""}
+        >
           <Sample.Group.Header>{`${patchName}.aif`}</Sample.Group.Header>
           <Sample.Group.Body>
+            {sampleGroup.duration > MAX_DURATION_SECONDS && (
+              <Alert variant={"warning"}>
+                Max channel duration ({MAX_DURATION_SECONDS}s) exceeded. Sample
+                may be truncated or fail to import.
+              </Alert>
+            )}
             <Sample.Group.DragDrop
               direction={"vertical"}
               onDragEnd={({ source, destination }) => {
@@ -160,6 +168,9 @@ export function OP1Z(props: SamplerProps) {
                         />
                       </Sample.Controls>
                     </Sample.Body>
+                    <Sample.Footer>
+                      <Sample.Duration duration={sample.duration} />
+                    </Sample.Footer>
                   </Sample>
                 ) : (
                   <Sample key={i} theme={note.theme}>
@@ -188,6 +199,9 @@ export function OP1Z(props: SamplerProps) {
               })}
             </Sample.Group.DragDrop>
           </Sample.Group.Body>
+          <Sample.Group.Footer>
+            <Sample.Duration duration={sampleGroup.duration} />
+          </Sample.Group.Footer>
         </Sample.Group>
         <Button
           disabled={
