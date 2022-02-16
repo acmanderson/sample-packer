@@ -1,26 +1,23 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Alert, Button, FormControl, InputGroup, Stack } from "react-bootstrap";
 import JSZip from "jszip";
 import { WAV } from "../formats/WAV";
 import { saveAs } from "file-saver";
 import { AudioSampleGroup } from "../util/AudioSample";
 import { Sample } from "../components/Sample";
+import { SampleAudioContext } from "../App";
 
 const MAX_CHANNEL_DURATION_SECONDS = 11;
 
-export interface SamplerProps {
-  audioContext: AudioContext;
-}
-
-export function SquidSalmple(props: SamplerProps) {
+export function SquidSalmple() {
   const [sampleGroups, setSampleGroups] = useState<AudioSampleGroup[]>(
     Array.from({ length: 8 }, () => new AudioSampleGroup())
   );
   const [bankNum, setBankNum] = useState(0);
   const [packName, setPackName] = useState("Sample Pack");
   const [saving, setSaving] = useState(false);
+  const audioContext = useContext(SampleAudioContext);
 
-  const { audioContext } = props;
   return (
     <>
       <InputGroup className="mb-3">

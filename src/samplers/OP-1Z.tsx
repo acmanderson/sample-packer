@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { SamplerProps } from "./SquidSalmple";
+import React, { useContext, useState } from "react";
 import { AudioSample, AudioSampleGroup } from "../util/AudioSample";
 import { Alert, Button, FormControl, InputGroup, Stack } from "react-bootstrap";
 import { AIFF, ApplicationData } from "../formats/AIFF";
 import { saveAs } from "file-saver";
 import { Sample } from "../components/Sample";
+import { SampleAudioContext } from "../App";
 
 const NUM_SAMPLES = 24;
 const MAX_DURATION_SECONDS = 12;
@@ -98,7 +98,7 @@ function buildMetadata(
   });
 }
 
-export function OP1Z(props: SamplerProps) {
+export function OP1Z() {
   const [sampleGroup, setSampleGroup] = useState(
     new AudioSampleGroup(
       new Array<AudioSample | undefined>(NUM_SAMPLES).fill(undefined)
@@ -106,8 +106,8 @@ export function OP1Z(props: SamplerProps) {
   );
   const [patchName, setPatchName] = useState("patch");
   const [saving, setSaving] = useState(false);
+  const audioContext = useContext(SampleAudioContext);
 
-  const { audioContext } = props;
   return (
     <>
       <InputGroup className="mb-3">
