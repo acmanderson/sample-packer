@@ -127,7 +127,7 @@ export function OP1Z() {
           <Sample.Group.Body>
             {sampleGroup.duration > MAX_DURATION_SECONDS && (
               <Alert variant={"warning"}>
-                Max channel duration ({MAX_DURATION_SECONDS}s) exceeded. Sample
+                Max patch duration ({MAX_DURATION_SECONDS}s) exceeded. Sample
                 may be truncated or fail to import.
               </Alert>
             )}

@@ -19,7 +19,7 @@ export const SampleGroupDragDrop = (
       <Droppable droppableId={"droppable"} direction={direction}>
         {(provided) => (
           <div ref={provided.innerRef} {...provided.droppableProps}>
-            <Stack direction={direction} gap={3} style={{ overflowX: "auto" }}>
+            <Stack direction={direction} style={{ overflowX: "auto" }}>
               {React.Children.map(children, (child, i) => (
                 <Draggable key={i} draggableId={i.toString()} index={i}>
                   {(provided) => (
@@ -28,12 +28,16 @@ export const SampleGroupDragDrop = (
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                     >
-                      {child}
+                      {/* use bootstrap padding instead of stack gap since react-beautiful-dnd doesn't work with flexbox gap */}
+                      <div
+                        className={direction === "horizontal" ? "pe-3" : "pb-3"}
+                      >
+                        {child}
+                      </div>
                     </div>
                   )}
                 </Draggable>
               ))}
-              {/* FIXME: placeholder padding doesn't match normal layout */}
               {provided.placeholder}
             </Stack>
           </div>
