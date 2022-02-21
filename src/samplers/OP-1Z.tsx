@@ -5,6 +5,7 @@ import { AIFF, ApplicationData } from "../formats/AIFF";
 import { saveAs } from "file-saver";
 import { Sample } from "../components/Sample";
 import { SampleAudioContext } from "../App";
+import { formatFileRejections } from "./util";
 
 const NUM_SAMPLES = 24;
 const MAX_DURATION_SECONDS = 12;
@@ -104,6 +105,9 @@ export function OP1Z() {
       new Array<AudioSample | undefined>(NUM_SAMPLES).fill(undefined)
     )
   );
+  const [sampleGroupErrors, setSampleGroupErrors] = useState<
+    Array<string | undefined>
+  >(new Array<string | undefined>(NUM_SAMPLES));
   const [patchName, setPatchName] = useState("patch");
   const [saving, setSaving] = useState(false);
   const audioContext = useContext(SampleAudioContext);
@@ -137,6 +141,10 @@ export function OP1Z() {
                 if (!!destination) {
                   sampleGroup.move(source.index, destination.index);
                   setSampleGroup(sampleGroup.clone());
+
+                  sampleGroupErrors[source.index] = undefined;
+                  sampleGroupErrors[destination.index] = undefined;
+                  setSampleGroupErrors([...sampleGroupErrors]);
                 }
               }}
             >
@@ -151,12 +159,20 @@ export function OP1Z() {
                           onClick={() => {
                             sampleGroup.move(i, i - 1);
                             setSampleGroup(sampleGroup.clone());
+
+                            sampleGroupErrors[i] = undefined;
+                            sampleGroupErrors[i - 1] = undefined;
+                            setSampleGroupErrors([...sampleGroupErrors]);
                           }}
                         />
                         <Sample.Controls.Down
                           onClick={() => {
                             sampleGroup.move(i, i + 1);
                             setSampleGroup(sampleGroup.clone());
+
+                            sampleGroupErrors[i] = undefined;
+                            sampleGroupErrors[i + 1] = undefined;
+                            setSampleGroupErrors([...sampleGroupErrors]);
                           }}
                         />
                         <Sample.Controls.Play onClick={() => sample.play()} />
@@ -164,6 +180,9 @@ export function OP1Z() {
                           onClick={() => {
                             sampleGroup.clear(i);
                             setSampleGroup(sampleGroup.clone());
+
+                            sampleGroupErrors[i] = undefined;
+                            setSampleGroupErrors([...sampleGroupErrors]);
                           }}
                         />
                       </Sample.Controls>
@@ -176,12 +195,35 @@ export function OP1Z() {
                   <Sample key={i} theme={note.theme}>
                     <Sample.Header>{note.name}</Sample.Header>
                     <Sample.Body>
+                      {!!sampleGroupErrors[i] && (
+                        <Alert
+                          variant={"danger"}
+                          dismissible
+                          onClose={() => {
+                            sampleGroupErrors[i] = undefined;
+                            setSampleGroupErrors([...sampleGroupErrors]);
+                          }}
+                        >
+                          {sampleGroupErrors[i]}
+                        </Alert>
+                      )}
                       <Sample.Dropzone
                         audioContext={audioContext}
                         multiple={false}
-                        onDrop={(samples) => {
+                        onDrop={(samples, fileRejections) => {
                           sampleGroup.set(i, samples[0]);
                           setSampleGroup(sampleGroup.clone());
+
+                          if (fileRejections.length > 0) {
+                            sampleGroupErrors[
+                              i
+                            ] = `File rejected: ${formatFileRejections(
+                              fileRejections
+                            )}`;
+                          } else {
+                            sampleGroupErrors[i] = undefined;
+                          }
+                          setSampleGroupErrors([...sampleGroupErrors]);
                         }}
                       >
                         {({ getRootProps, getInputProps, isDragActive }) => (
@@ -204,9 +246,7 @@ export function OP1Z() {
           </Sample.Group.Footer>
         </Sample.Group>
         <Button
-          disabled={
-            saving /* FIXME: this doesn't rerender for some reason when calling setSaving() */
-          }
+          disabled={saving}
           onClick={() => {
             setSaving(true);
 

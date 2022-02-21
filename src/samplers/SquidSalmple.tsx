@@ -6,13 +6,18 @@ import { saveAs } from "file-saver";
 import { AudioSampleGroup } from "../util/AudioSample";
 import { Sample } from "../components/Sample";
 import { SampleAudioContext } from "../App";
+import { formatFileRejections } from "./util";
 
 const MAX_CHANNEL_DURATION_SECONDS = 11;
+const NUM_CHANNELS = 8;
 
 export function SquidSalmple() {
   const [sampleGroups, setSampleGroups] = useState<AudioSampleGroup[]>(
-    Array.from({ length: 8 }, () => new AudioSampleGroup())
+    Array.from({ length: NUM_CHANNELS }, () => new AudioSampleGroup())
   );
+  const [sampleGroupErrors, setSampleGroupErrors] = useState<
+    Array<string | undefined>
+  >(new Array<string | undefined>(NUM_CHANNELS));
   const [bankNum, setBankNum] = useState(0);
   const [packName, setPackName] = useState("Sample Pack");
   const [saving, setSaving] = useState(false);
@@ -53,6 +58,18 @@ export function SquidSalmple() {
           >
             <Sample.Group.Header>{`Channel ${i + 1}`}</Sample.Group.Header>
             <Sample.Group.Body>
+              {sampleGroupErrors[i] && (
+                <Alert
+                  variant={"danger"}
+                  dismissible
+                  onClose={() => {
+                    sampleGroupErrors[i] = undefined;
+                    setSampleGroupErrors([...sampleGroupErrors]);
+                  }}
+                >
+                  {sampleGroupErrors[i]}
+                </Alert>
+              )}
               {sampleGroup.duration > MAX_CHANNEL_DURATION_SECONDS && (
                 <Alert variant={"warning"}>
                   Max channel duration ({MAX_CHANNEL_DURATION_SECONDS}s)
@@ -62,9 +79,20 @@ export function SquidSalmple() {
               <Sample.Dropzone
                 audioContext={audioContext}
                 multiple={true}
-                onDrop={(samples) => {
+                onDrop={(samples, fileRejections) => {
                   sampleGroup.add(...samples);
                   setSampleGroups([...sampleGroups]);
+
+                  if (fileRejections.length > 0) {
+                    sampleGroupErrors[
+                      i
+                    ] = `Files rejected: ${formatFileRejections(
+                      fileRejections
+                    )}`;
+                  } else {
+                    sampleGroupErrors[i] = undefined;
+                  }
+                  setSampleGroupErrors([...sampleGroupErrors]);
                 }}
               >
                 {({ getRootProps, getInputProps, isDragActive }) => (

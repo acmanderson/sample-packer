@@ -48,6 +48,8 @@ export class IFF {
     this.buffers = buffers;
   }
 
+  // TODO: this can be CPU intensive and cause the UI to not rerender while this function is running, may require
+  // doing audio processing in a worker
   toBlob(): Promise<Blob> {
     return new Promise((resolve) => resolve(new Blob()));
   }
