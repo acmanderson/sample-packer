@@ -125,7 +125,31 @@ export class AudioSampleBuffer {
     this.audioBuffer.copyToChannel(newBuffer, 0);
   }
 
-  sampleAtIndex(channel: number, sampleIndex: number, bitDepth: 16): number {
+  resample(sampleRate: 22050 | 44100): Promise<void> {
+    if (this.audioBuffer.sampleRate === sampleRate) {
+      return Promise.resolve();
+    }
+
+    const audioContext = new OfflineAudioContext(
+      this.audioBuffer.numberOfChannels,
+      this.audioBuffer.length / (this.audioBuffer.sampleRate / sampleRate),
+      sampleRate
+    );
+    const source = audioContext.createBufferSource();
+    source.buffer = this.audioBuffer;
+    source.connect(audioContext.destination);
+    source.start();
+
+    return audioContext.startRendering().then((buffer) => {
+      this.audioBuffer = buffer;
+    });
+  }
+
+  sampleAtIndex(
+    channel: number,
+    sampleIndex: number,
+    bitDepth: 8 | 16
+  ): number {
     // convert float32 sample to integer of provided bit depth
     const sampleMax = 2 ** bitDepth / 2;
     const sample = this.audioBuffer.getChannelData(channel)[sampleIndex];

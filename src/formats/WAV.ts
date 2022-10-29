@@ -14,8 +14,8 @@ class FormatChunk extends Chunk {
   constructor(options: {
     // TODO: take from audio
     numChannels: 1;
-    sampleRate: 44100;
-    bitDepth: 16;
+    sampleRate: 22050 | 44100;
+    bitDepth: 8 | 16;
   }) {
     super("fmt ", 16, true);
 
@@ -33,8 +33,8 @@ class FormatChunk extends Chunk {
 class DataChunk extends Chunk {
   sampleOffsets: number[];
 
-  constructor(options: { buffers: AudioSampleBuffer[]; bitDepth: 16 }) {
-    // TODO: support multiple channels, bit depths
+  constructor(options: { buffers: AudioSampleBuffer[]; bitDepth: 8 | 16 }) {
+    // TODO: support multiple channels
     super(
       "data",
       options.buffers.reduce((length, buffer) => {
@@ -52,6 +52,10 @@ class DataChunk extends Chunk {
       for (let i = 0; i < buffer.length; i++) {
         const sample = buffer.sampleAtIndex(0, i, options.bitDepth);
         switch (options.bitDepth) {
+          case 8:
+            // 8-bit WAVs use unsigned samples
+            this.setUint8(sample + 2 ** 8 / 2);
+            break;
           case 16:
             this.setInt16(sample);
             break;
@@ -78,13 +82,33 @@ class CueChunk extends Chunk {
 }
 
 export class WAV extends IFF {
+  sampleRate: 22050 | 44100;
+  bitDepth: 8 | 16;
+
+  constructor(
+    buffers: AudioSampleBuffer[],
+    options?: { sampleRate?: 22050 | 44100; bitDepth?: 8 | 16 }
+  ) {
+    super(buffers);
+
+    this.sampleRate = options?.sampleRate ?? 44100;
+    this.bitDepth = options?.bitDepth ?? 16;
+  }
+
   toBlob(): Promise<Blob> {
     return new Promise<Blob>((resolve) => {
       const chunks = new Array<Chunk>();
       chunks.push(
-        new FormatChunk({ numChannels: 1, sampleRate: 44100, bitDepth: 16 })
+        new FormatChunk({
+          numChannels: 1,
+          sampleRate: this.sampleRate,
+          bitDepth: this.bitDepth,
+        })
       );
-      const dataChunk = new DataChunk({ buffers: this.buffers, bitDepth: 16 });
+      const dataChunk = new DataChunk({
+        buffers: this.buffers,
+        bitDepth: this.bitDepth,
+      });
       chunks.push(dataChunk);
       if (this.buffers.length > 0) {
         chunks.push(new CueChunk(dataChunk.sampleOffsets));
