@@ -9,6 +9,7 @@ import { SquidSalmple } from "./samplers/SquidSalmple";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import DropdownItem from "react-bootstrap/DropdownItem";
 import { OP1Z } from "./samplers/OP-1Z";
+import { Microgranny } from "./samplers/Microgranny";
 
 export const SampleAudioContext = React.createContext<AudioContext>(
   new AudioContext()
@@ -33,6 +34,11 @@ function App() {
         name: "OP-1/OP-Z",
         path: "op-1z",
         element: <OP1Z />,
+      },
+      {
+        name: "Microgranny",
+        path: "microgranny",
+        element: <Microgranny />,
       },
     ];
   }, []);

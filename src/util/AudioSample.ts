@@ -1,3 +1,5 @@
+import StatefulList from "./StatefulList";
+
 export class AudioSample {
   audioContext: AudioContext;
 
@@ -29,57 +31,30 @@ export class AudioSample {
   }
 }
 
-export class AudioSampleGroup {
-  samples: (AudioSample | undefined)[];
-
-  constructor(samples?: (AudioSample | undefined)[]) {
-    this.samples = samples ?? [];
+export class AudioSampleGroup extends StatefulList<AudioSample | undefined> {
+  get samples(): (AudioSample | undefined)[] {
+    return this.items;
   }
 
   get duration(): number {
-    return this.samples.reduce(
+    return this.items.reduce(
       (total, sample) => total + (sample?.duration ?? 0),
       0
     );
   }
 
   clone(): AudioSampleGroup {
-    return new AudioSampleGroup(this.samples);
-  }
-
-  move(from: number, to: number) {
-    if (
-      from < 0 ||
-      from > this.samples.length - 1 ||
-      to < 0 ||
-      to > this.samples.length - 1
-    ) {
-      return;
-    }
-
-    this.samples.splice(to, 0, this.samples.splice(from, 1)[0]);
-  }
-
-  add(...samples: AudioSample[]) {
-    this.samples.push(...samples);
-  }
-
-  remove(i: number) {
-    this.samples.splice(i, 1);
-  }
-
-  set(i: number, sample: AudioSample) {
-    this.samples[i] = sample;
-  }
-
-  clear(i: number) {
-    this.samples[i] = undefined;
+    return new AudioSampleGroup(this.items);
   }
 
   buffers(): AudioSampleBuffer[] {
     return this.samples
       .filter((sample) => !!sample?.audioBuffer)
       .map((sample) => sample!.audioBuffer!);
+  }
+
+  clear(i: number) {
+    this.items[i] = undefined;
   }
 }
 
