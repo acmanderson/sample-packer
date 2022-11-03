@@ -46,7 +46,7 @@ const filenameSelectOptions = (start?: number, end?: number) => {
   return options.map((option, i) => <option key={i}>{option}</option>);
 };
 
-const buildPreset = (sounds: (PresetSound | undefined)[]): Blob => {
+const buildPreset = (sounds: PresetSound[]): Blob => {
   // dumb way to represent bytes, but makes it easier to manipulate specific bits than when using BigInt
   const template =
     "011011010000001100000000000000000000000000100000000000001111111000000111000001001000001100000000";
@@ -55,28 +55,27 @@ const buildPreset = (sounds: (PresetSound | undefined)[]): Blob => {
     const soundBits = Array.from(template);
 
     // encode file name
-    const name = !!sound ? sound.name : "A1";
     // file names are stored as:
     //   * 7-bit ASCII encoding of first character
-    const bankBits = name.charCodeAt(0).toString(2).padStart(7, "0");
+    const bankBits = sound.name.charCodeAt(0).toString(2).padStart(7, "0");
     //   * 7-bit ASCII encoding of second character
-    const sampleBits = name.charCodeAt(1).toString(2).padStart(7, "0");
+    const sampleBits = sound.name.charCodeAt(1).toString(2).padStart(7, "0");
     const soundStart = 8 * 8 + 7;
     soundBits.splice(soundStart, 7, ...Array.from(bankBits));
     // there's a two bit gap between first char and second char, I don't yet know why
     soundBits.splice(soundStart + 7 + 2, 7, ...Array.from(sampleBits));
 
-    const setBit = (index: number, condition?: boolean) => {
+    const setBit = (index: number, condition: boolean) => {
       soundBits[index] = condition ? "1" : "0";
     };
-    // file names starting with a number have a specific bit unset
-    setBit(87, name.charCodeAt(0) > 48);
+    // file names starting with a number (reserved for recorded samples) have a specific bit unset
+    setBit(87, sound.name.charCodeAt(0) > 48);
     // set sound parameters
-    setBit(69, sound?.options.tuned);
-    setBit(68, sound?.options.legato);
-    setBit(67, sound?.options.repeat);
-    setBit(66, sound?.options.sync);
-    setBit(65, sound?.options["random shift"]);
+    setBit(69, sound.options.tuned);
+    setBit(68, sound.options.legato);
+    setBit(67, sound.options.repeat);
+    setBit(66, sound.options.sync);
+    setBit(65, sound.options["random shift"]);
 
     // turn string array into bytes
     const soundData = new Uint8Array(soundBits.length / 8);
