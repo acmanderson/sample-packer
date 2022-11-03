@@ -14,6 +14,7 @@ interface PresetOptions {
   legato: boolean;
   repeat: boolean;
   sync: boolean;
+  "random shift": boolean;
 
   [key: string]: boolean;
 }
@@ -30,6 +31,7 @@ const DEFAULT_SOUND_OPTIONS: PresetOptions = {
   legato: false,
   repeat: false,
   sync: true,
+  "random shift": false,
 };
 
 const NUM_SOUNDS = 6;
@@ -64,12 +66,17 @@ const buildPreset = (sounds: (PresetSound | undefined)[]): Blob => {
     // there's a two bit gap between first char and second char, I don't yet know why
     soundBits.splice(soundStart + 7 + 2, 7, ...Array.from(sampleBits));
 
+    const setBit = (index: number, condition?: boolean) => {
+      soundBits[index] = condition ? "1" : "0";
+    };
     // file names starting with a number have a specific bit unset
-    if (name.charCodeAt(0) <= 48) {
-      soundBits[87] = "0";
-    }
-
-    // TODO: set sound options
+    setBit(87, name.charCodeAt(0) > 48);
+    // set sound parameters
+    setBit(69, sound?.options.tuned);
+    setBit(68, sound?.options.legato);
+    setBit(67, sound?.options.repeat);
+    setBit(66, sound?.options.sync);
+    setBit(65, sound?.options["random shift"]);
 
     // turn string array into bytes
     const soundData = new Uint8Array(soundBits.length / 8);
@@ -204,21 +211,20 @@ export function Microgranny() {
                           </Form.Select>
                           <InputGroup.Text>.WAV</InputGroup.Text>
                         </InputGroup>
-                        {/*<div>*/}
-                        {/*  {Object.keys(sound.options).map((option, i) => (*/}
-                        {/*    <Form.Check*/}
-                        {/*      key={i}*/}
-                        {/*      inline*/}
-                        {/*      label={option}*/}
-                        {/*      checked={sound.options[option]}*/}
-                        {/*      onChange={() => {*/}
-                        {/*        presetSounds.items[i].options[option] =*/}
-                        {/*          !sound.options[option];*/}
-                        {/*        setPresetSounds(presetSounds.clone());*/}
-                        {/*      }}*/}
-                        {/*    />*/}
-                        {/*  ))}*/}
-                        {/*</div>*/}
+                        <div>
+                          {Object.keys(sound.options).map((option, i) => (
+                            <Form.Check
+                              key={i}
+                              inline
+                              label={option}
+                              checked={sound.options[option]}
+                              onChange={() => {
+                                sound.options[option] = !sound.options[option];
+                                setPresetSounds(presetSounds.clone());
+                              }}
+                            />
+                          ))}
+                        </div>
                         {!!sound.sample && (
                           <InputGroup>
                             <InputGroup.Text>Bit Depth</InputGroup.Text>
